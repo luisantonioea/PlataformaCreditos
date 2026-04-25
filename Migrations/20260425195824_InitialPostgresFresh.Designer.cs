@@ -11,8 +11,8 @@ using PlataformaCreditos.Data;
 namespace PlataformaCreditos.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260425194519_InitialPostgresVFinal2")]
-    partial class InitialPostgresVFinal2
+    [Migration("20260425195824_InitialPostgresFresh")]
+    partial class InitialPostgresFresh
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
