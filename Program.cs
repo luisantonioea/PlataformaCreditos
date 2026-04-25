@@ -15,6 +15,28 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.Requ
     .AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.AddControllersWithViews();
 
+// ==========================================
+// CONFIGURACIÓN DE REDIS Y SESIONES (Pregunta 4)
+// ==========================================
+// 1. Inyectar Redis como Caché
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration["Redis:ConnectionString"];
+    options.InstanceName = "PlataformaCreditos_";
+});
+
+// 2. Configurar la Sesión
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true; // Requerido para que funcione sin aceptar cookies
+});
+
+// 3. Permitir leer la sesión en las vistas (Layout)
+builder.Services.AddHttpContextAccessor();
+// ==========================================
+
 var app = builder.Build();
 
 // --- INICIO DEL SEEDING DE ROLES Y USUARIOS ---
@@ -56,7 +78,16 @@ else
 app.UseHttpsRedirection();
 app.UseRouting();
 
+// Es buena práctica asegurarse de que Authentication vaya antes de Authorization
+app.UseAuthentication(); 
 app.UseAuthorization();
+
+// ==========================================
+// ACTIVAR SESIONES (Pregunta 4)
+// Obligatorio colocarlo entre Authorization y el ruteo de controladores
+// ==========================================
+app.UseSession();
+// ==========================================
 
 app.MapStaticAssets();
 

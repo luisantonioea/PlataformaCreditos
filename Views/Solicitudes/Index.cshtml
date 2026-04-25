@@ -60,7 +60,7 @@
             <th>Monto Solicitado</th>
             <th>Estado</th>
             <th>Motivo de Rechazo</th>
-        </tr>
+            <th>Acciones</th> </tr>
     </thead>
     <tbody>
         @if (Model.Solicitudes.Any())
@@ -73,6 +73,7 @@
                     <td>@item.MontoSolicitado.ToString("C")</td>
                     <td>
                         @{
+                            // Esta es la variable que faltaba definir
                             var badgeClass = item.Estado switch
                             {
                                 PlataformaCreditos.Models.EstadoSolicitud.Aprobado => "bg-success",
@@ -83,13 +84,18 @@
                         <span class="badge @badgeClass">@item.Estado</span>
                     </td>
                     <td>@(item.MotivoRechazo ?? "-")</td>
+                    <td>
+                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info text-white">
+                            Ver Detalle
+                        </a>
+                    </td>
                 </tr>
             }
         }
         else
         {
             <tr>
-                <td colspan="5" class="text-center">No se encontraron solicitudes con esos filtros.</td>
+                <td colspan="6" class="text-center">No se encontraron solicitudes con esos filtros.</td>
             </tr>
         }
     </tbody>
