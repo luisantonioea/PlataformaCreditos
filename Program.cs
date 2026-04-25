@@ -47,12 +47,21 @@ builder.Services.AddHttpContextAccessor();
 var app = builder.Build();
 
 // Seeding
+// --- INICIO DEL SEEDING DE ROLES Y USUARIOS ---
 using (var scope = app.Services.CreateScope())
 {
+    // 1. Obtener el contexto de la base de datos y APLICAR MIGRACIONES
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await db.Database.MigrateAsync(); // <--- ¡ESTA ES LA LÍNEA MÁGICA QUE TE FALTA!
+
+    // 2. Ahora sí, crear roles y usuarios
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
+
     if (!await roleManager.RoleExistsAsync("Analista"))
+    {
         await roleManager.CreateAsync(new IdentityRole("Analista"));
+    }
 
     var analistaEmail = "analista@banco.com";
     var user = await userManager.FindByEmailAsync(analistaEmail);
@@ -63,6 +72,7 @@ using (var scope = app.Services.CreateScope())
         await userManager.AddToRoleAsync(user, "Analista");
     }
 }
+// --- FIN DEL SEEDING ---
 
 if (app.Environment.IsDevelopment())
 {
