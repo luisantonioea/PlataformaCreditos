@@ -1,0 +1,35 @@
+@model PlataformaCreditos.Models.SolicitudCredito
+
+@{
+    ViewData["Title"] = "Nueva Solicitud";
+}
+
+<div class="row mt-4">
+    <div class="col-md-6 offset-md-3">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Registrar Nueva Solicitud de Crédito</h4>
+            </div>
+            <div class="card-body">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert" style="display: @(ViewData.ModelState.ErrorCount > 0 ? "block" : "none")"></div>
+
+                <form asp-action="Create" method="post">
+                    <div class="mb-3">
+                        <label asp-for="MontoSolicitado" class="form-label">Monto a Solicitar (USD / PEN)</label>
+                        <input asp-for="MontoSolicitado" class="form-control" type="number" step="0.01" placeholder="Ej. 1500.00" />
+                        <span asp-validation-for="MontoSolicitado" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success">Registrar Solicitud</button>
+                        <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
