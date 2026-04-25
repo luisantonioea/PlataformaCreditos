@@ -15,8 +15,13 @@ public class ApplicationDbContext : IdentityDbContext
     public DbSet<SolicitudCredito> SolicitudesCredito { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
-    {
-        base.OnModelCreating(builder);
-        // Sin HasData, la migración será limpia y compatible con Postgres.
-    }
+{
+    base.OnModelCreating(builder);
+
+    // Fuerza a PostgreSQL a usar el tipo BOOLEAN correcto en lugar de INTEGER
+    builder.Entity<Microsoft.AspNetCore.Identity.IdentityUser>().Property(u => u.EmailConfirmed).HasColumnType("boolean");
+    builder.Entity<Microsoft.AspNetCore.Identity.IdentityUser>().Property(u => u.PhoneNumberConfirmed).HasColumnType("boolean");
+    builder.Entity<Microsoft.AspNetCore.Identity.IdentityUser>().Property(u => u.TwoFactorEnabled).HasColumnType("boolean");
+    builder.Entity<Microsoft.AspNetCore.Identity.IdentityUser>().Property(u => u.LockoutEnabled).HasColumnType("boolean");
+}
 }

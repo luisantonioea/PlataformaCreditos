@@ -11,8 +11,8 @@ using PlataformaCreditos.Data;
 namespace PlataformaCreditos.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260425190654_InitialPostgresVFinal")]
-    partial class InitialPostgresVFinal
+    [Migration("20260425194519_InitialPostgresVFinal2")]
+    partial class InitialPostgresVFinal2
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -86,10 +86,10 @@ namespace PlataformaCreditos.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("EmailConfirmed")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("LockoutEnabled")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("boolean");
 
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("TEXT");
@@ -109,13 +109,13 @@ namespace PlataformaCreditos.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("PhoneNumberConfirmed")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("TwoFactorEnabled")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("UserName")
                         .HasMaxLength(256)
