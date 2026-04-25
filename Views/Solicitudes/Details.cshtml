@@ -1,0 +1,10 @@
+@model PlataformaCreditos.Models.SolicitudCredito
+@{ ViewData["Title"] = "Detalle Solicitud"; }
+
+<h2>Detalle de Solicitud #@Model.Id</h2>
+<ul class="list-group mb-3">
+    <li class="list-group-item"><strong>Monto:</strong> @Model.MontoSolicitado.ToString("C")</li>
+    <li class="list-group-item"><strong>Fecha:</strong> @Model.FechaSolicitud</li>
+    <li class="list-group-item"><strong>Estado:</strong> @Model.Estado</li>
+</ul>
+<a asp-action="Index" class="btn btn-secondary">Volver</a>

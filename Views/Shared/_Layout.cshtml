@@ -1,4 +1,7 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -25,6 +28,20 @@
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Solicitudes" asp-action="Index">Mis Solicitudes</a>
                             </li>
+
+                            // --- INICIO: CÓDIGO DE SESIÓN (Pregunta 4) ---
+                            var ultimoMonto = HttpContextAccessor.HttpContext?.Session.GetString("UltimaSolicitudMonto");
+                            var ultimoId = HttpContextAccessor.HttpContext?.Session.GetString("UltimaSolicitudId");
+
+                            if (!string.IsNullOrEmpty(ultimoMonto) && !string.IsNullOrEmpty(ultimoId))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-info fw-bold" asp-controller="Solicitudes" asp-action="Details" asp-route-id="@ultimoId">
+                                        Última vista: @ultimoMonto
+                                    </a>
+                                </li>
+                            }
+                            // --- FIN: CÓDIGO DE SESIÓN ---
                         }
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
