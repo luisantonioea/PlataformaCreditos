@@ -1,0 +1,60 @@
+@model IEnumerable<PlataformaCreditos.Models.SolicitudCredito>
+
+@{ ViewData["Title"] = "Panel del Analista"; }
+
+<h2 class="mb-4">Solicitudes Pendientes</h2>
+
+@if (TempData["SuccessMessage"] != null) 
+{ 
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div> 
+}
+@if (TempData["ErrorMessage"] != null) 
+{ 
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div> 
+}
+
+<table class="table table-bordered">
+    <thead class="table-dark">
+        <tr>
+            <th>ID</th>
+            <th>Cliente</th>
+            <th>Ingresos Mensuales</th>
+            <th>Monto</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Id</td>
+                <td>@item.Cliente!.UsuarioId</td>
+                <td>@item.Cliente.IngresosMensuales.ToString("C")</td>
+                <td>@item.MontoSolicitado.ToString("C")</td>
+                <td>
+                    <form asp-action="Aprobar" asp-route-id="@item.Id" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-success btn-sm">Aprobar</button>
+                    </form>
+                    
+                    <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#rechazarModal-@item.Id">Rechazar</button>
+                </td>
+            </tr>
+
+            <div class="modal fade" id="rechazarModal-@item.Id" tabindex="-1">
+                <div class="modal-dialog">
+                    <form asp-action="Rechazar" asp-route-id="@item.Id" method="post" class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Motivo de Rechazo</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <textarea name="motivo" class="form-control" required placeholder="Escriba el motivo..."></textarea>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-danger">Confirmar Rechazo</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        } </tbody>
+</table>
