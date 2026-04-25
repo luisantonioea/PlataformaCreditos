@@ -8,11 +8,11 @@ using PlataformaCreditos.Data;
 
 #nullable disable
 
-namespace PlataformaCreditos.Data.Migrations
+namespace PlataformaCreditos.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260425182740_InitialPostgres")]
-    partial class InitialPostgres
+    [Migration("20260425190654_InitialPostgresVFinal")]
+    partial class InitialPostgresVFinal
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -235,22 +235,6 @@ namespace PlataformaCreditos.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Clientes");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Activo = true,
-                            IngresosMensuales = 2000m,
-                            UsuarioId = "user-mock-1"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Activo = true,
-                            IngresosMensuales = 3500m,
-                            UsuarioId = "user-mock-2"
-                        });
                 });
 
             modelBuilder.Entity("PlataformaCreditos.Models.SolicitudCredito", b =>
@@ -279,24 +263,6 @@ namespace PlataformaCreditos.Data.Migrations
                     b.HasIndex("ClienteId");
 
                     b.ToTable("SolicitudesCredito");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            ClienteId = 1,
-                            Estado = 1,
-                            FechaSolicitud = new DateTime(2026, 4, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            MontoSolicitado = 1500m
-                        },
-                        new
-                        {
-                            Id = 2,
-                            ClienteId = 2,
-                            Estado = 0,
-                            FechaSolicitud = new DateTime(2026, 4, 25, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            MontoSolicitado = 5000m
-                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
