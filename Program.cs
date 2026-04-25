@@ -4,12 +4,9 @@ using PlataformaCreditos.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ==========================================
-// CONFIGURACIÓN DE BASE DE DATOS (Desarrollo vs Producción)
-// ==========================================
+// Configuración de Base de Datos
 if (builder.Environment.IsDevelopment())
 {
-    // En tu PC: Usa SQLite
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
         ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -17,7 +14,6 @@ if (builder.Environment.IsDevelopment())
 }
 else
 {
-    // En Render: Usará Postgres (asegúrate de configurar ConnectionStrings:PostgresConnection en Render)
     var pgConnectionString = builder.Configuration.GetConnectionString("PostgresConnection");
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
         options.UseNpgsql(pgConnectionString));
@@ -25,14 +21,14 @@ else
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
+// Corregido: AddDefaultIdentity requiere Microsoft.AspNetCore.Identity.UI instalado
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
+
 builder.Services.AddControllersWithViews();
 
-// ==========================================
-// CONFIGURACIÓN DE REDIS Y SESIONES
-// ==========================================
+// Configuración Redis
 builder.Services.AddStackExchangeRedisCache(options =>
 {
     options.Configuration = builder.Configuration["Redis:ConnectionString"];
@@ -50,16 +46,13 @@ builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
-// --- INICIO DEL SEEDING DE ROLES Y USUARIOS ---
+// Seeding
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
-
     if (!await roleManager.RoleExistsAsync("Analista"))
-    {
         await roleManager.CreateAsync(new IdentityRole("Analista"));
-    }
 
     var analistaEmail = "analista@banco.com";
     var user = await userManager.FindByEmailAsync(analistaEmail);
@@ -70,9 +63,7 @@ using (var scope = app.Services.CreateScope())
         await userManager.AddToRoleAsync(user, "Analista");
     }
 }
-// --- FIN DEL SEEDING ---
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
@@ -84,22 +75,19 @@ else
 }
 
 app.UseHttpsRedirection();
-app.UseRouting();
 
+// IMPORTANTE: Esto reemplaza a MapStaticAssets en .NET 8
+app.UseStaticFiles(); 
+
+app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
-
-// Activación de Sesiones
 app.UseSession();
-
-app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}")
-    .WithStaticAssets();
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
-app.MapRazorPages()
-   .WithStaticAssets();
+app.MapRazorPages();
 
 app.Run();
