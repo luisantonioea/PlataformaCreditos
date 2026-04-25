@@ -4,10 +4,25 @@ using PlataformaCreditos.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(connectionString));
+// ==========================================
+// CONFIGURACIÓN DE BASE DE DATOS (Desarrollo vs Producción)
+// ==========================================
+if (builder.Environment.IsDevelopment())
+{
+    // En tu PC: Usa SQLite
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+        ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseSqlite(connectionString));
+}
+else
+{
+    // En Render: Usará Postgres (asegúrate de configurar ConnectionStrings:PostgresConnection en Render)
+    var pgConnectionString = builder.Configuration.GetConnectionString("PostgresConnection");
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseNpgsql(pgConnectionString));
+}
+
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
@@ -16,48 +31,42 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.Requ
 builder.Services.AddControllersWithViews();
 
 // ==========================================
-// CONFIGURACIÓN DE REDIS Y SESIONES (Pregunta 4)
+// CONFIGURACIÓN DE REDIS Y SESIONES
 // ==========================================
-// 1. Inyectar Redis como Caché
 builder.Services.AddStackExchangeRedisCache(options =>
 {
     options.Configuration = builder.Configuration["Redis:ConnectionString"];
     options.InstanceName = "PlataformaCreditos_";
 });
 
-// 2. Configurar la Sesión
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
     options.Cookie.HttpOnly = true;
-    options.Cookie.IsEssential = true; // Requerido para que funcione sin aceptar cookies
+    options.Cookie.IsEssential = true;
 });
 
-// 3. Permitir leer la sesión en las vistas (Layout)
 builder.Services.AddHttpContextAccessor();
-// ==========================================
 
 var app = builder.Build();
 
 // --- INICIO DEL SEEDING DE ROLES Y USUARIOS ---
 using (var scope = app.Services.CreateScope())
 {
-    var roleManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.RoleManager<Microsoft.AspNetCore.Identity.IdentityRole>>();
-    var userManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<Microsoft.AspNetCore.Identity.IdentityUser>>();
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
 
-    // 1. Crear el rol Analista si no existe
     if (!await roleManager.RoleExistsAsync("Analista"))
     {
-        await roleManager.CreateAsync(new Microsoft.AspNetCore.Identity.IdentityRole("Analista"));
+        await roleManager.CreateAsync(new IdentityRole("Analista"));
     }
 
-    // 2. Crear el usuario Analista de prueba si no existe
     var analistaEmail = "analista@banco.com";
     var user = await userManager.FindByEmailAsync(analistaEmail);
     if (user == null)
     {
-        user = new Microsoft.AspNetCore.Identity.IdentityUser { UserName = analistaEmail, Email = analistaEmail, EmailConfirmed = true };
-        await userManager.CreateAsync(user, "Password123!"); // Contraseña del analista
+        user = new IdentityUser { UserName = analistaEmail, Email = analistaEmail, EmailConfirmed = true };
+        await userManager.CreateAsync(user, "Password123!");
         await userManager.AddToRoleAsync(user, "Analista");
     }
 }
@@ -71,23 +80,17 @@ if (app.Environment.IsDevelopment())
 else
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
 app.UseRouting();
 
-// Es buena práctica asegurarse de que Authentication vaya antes de Authorization
-app.UseAuthentication(); 
+app.UseAuthentication();
 app.UseAuthorization();
 
-// ==========================================
-// ACTIVAR SESIONES (Pregunta 4)
-// Obligatorio colocarlo entre Authorization y el ruteo de controladores
-// ==========================================
+// Activación de Sesiones
 app.UseSession();
-// ==========================================
 
 app.MapStaticAssets();
 
