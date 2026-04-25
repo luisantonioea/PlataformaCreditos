@@ -5,6 +5,17 @@
 }
 
 <h2 class="mb-4">Mis Solicitudes de Crédito</h2>
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="mb-3">
+    <a asp-action="Create" class="btn btn-success"><i class="bi bi-plus-circle"></i> Nueva Solicitud</a>
+</div>
 
 <div asp-validation-summary="All" class="text-danger mb-3"></div>
 
