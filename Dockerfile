@@ -1,19 +1,19 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copiar el archivo de proyecto y restaurar dependencias
-COPY *.csproj ./
-RUN dotnet restore
+COPY ["PlataformaCreditos.csproj", "./"]
+RUN dotnet restore "PlataformaCreditos.csproj"
 
-# Copiar el resto del código y publicar
 COPY . .
-RUN dotnet publish -c Release -o /app
+# La bandera /p:UseAppHost=false evita crear binarios de Windows en Linux
+RUN dotnet publish "PlataformaCreditos.csproj" -c Release -o /app /p:UseAppHost=false
 
-# Crear imagen final
-FROM mcr.microsoft.com/dotnet/aspnet:8.0
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 COPY --from=build /app .
 
-# Puerto y comando de inicio
+# Forzamos el puerto estándar de .NET 8 en contenedores
 ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 8080
+
 ENTRYPOINT ["dotnet", "PlataformaCreditos.dll"]

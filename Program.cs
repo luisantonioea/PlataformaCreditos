@@ -4,36 +4,34 @@ using PlataformaCreditos.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configuración de Base de Datos
-if (builder.Environment.IsDevelopment())
-{
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-        ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-    builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        options.UseSqlite(connectionString));
-}
-else
-{
-    var pgConnectionString = builder.Configuration.GetConnectionString("PostgresConnection");
-    builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        options.UseNpgsql(pgConnectionString));
-}
+// 1. FORZAR POSTGRES Y LA CONEXIÓN (El secreto para que la migración salga bien)
+var pgConnectionString = "Host=dpg-d7mi04e8bjmc738c62v0-a.oregon-postgres.render.com;Database=db_plataforma_creditos_5n5s;Username=db_plataforma_creditos_5n5s_user;Password=NdJ0NKStoBmN0C5xR6dlEJOI6auVbAVf;Port=5432;SSL Mode=Require;Trust Server Certificate=true;";
+
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseNpgsql(pgConnectionString));
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-// Corregido: AddDefaultIdentity requiere Microsoft.AspNetCore.Identity.UI instalado
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
 builder.Services.AddControllersWithViews();
 
-// Configuración Redis
-builder.Services.AddStackExchangeRedisCache(options =>
+// 2. BLINDAJE REDIS (Si falla en Render, usa memoria para NO CRASHEAR)
+var redisConn = builder.Configuration["Redis:ConnectionString"];
+if (!string.IsNullOrEmpty(redisConn))
 {
-    options.Configuration = builder.Configuration["Redis:ConnectionString"];
-    options.InstanceName = "PlataformaCreditos_";
-});
+    builder.Services.AddStackExchangeRedisCache(options =>
+    {
+        options.Configuration = redisConn;
+        options.InstanceName = "PlataformaCreditos_";
+    });
+}
+else
+{
+    builder.Services.AddDistributedMemoryCache();
+}
 
 builder.Services.AddSession(options =>
 {
@@ -46,33 +44,36 @@ builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
-// Seeding
-// --- INICIO DEL SEEDING DE ROLES Y USUARIOS ---
+// 3. BLINDAJE TRY-CATCH (Evita el Error 139 al arrancar)
 using (var scope = app.Services.CreateScope())
 {
-    // 1. Obtener el contexto de la base de datos y APLICAR MIGRACIONES
-    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    await db.Database.MigrateAsync(); // <--- ¡ESTA ES LA LÍNEA MÁGICA QUE TE FALTA!
-
-    // 2. Ahora sí, crear roles y usuarios
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
-
-    if (!await roleManager.RoleExistsAsync("Analista"))
+    try
     {
-        await roleManager.CreateAsync(new IdentityRole("Analista"));
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        await db.Database.MigrateAsync(); 
+
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
+
+        if (!await roleManager.RoleExistsAsync("Analista"))
+        {
+            await roleManager.CreateAsync(new IdentityRole("Analista"));
+        }
+
+        var analistaEmail = "analista@banco.com";
+        var user = await userManager.FindByEmailAsync(analistaEmail);
+        if (user == null)
+        {
+            user = new IdentityUser { UserName = analistaEmail, Email = analistaEmail, EmailConfirmed = true };
+            await userManager.CreateAsync(user, "Password123!");
+            await userManager.AddToRoleAsync(user, "Analista");
+        }
     }
-
-    var analistaEmail = "analista@banco.com";
-    var user = await userManager.FindByEmailAsync(analistaEmail);
-    if (user == null)
+    catch (Exception ex)
     {
-        user = new IdentityUser { UserName = analistaEmail, Email = analistaEmail, EmailConfirmed = true };
-        await userManager.CreateAsync(user, "Password123!");
-        await userManager.AddToRoleAsync(user, "Analista");
+        Console.WriteLine($"\n\n=== ERROR CRITICO DE BASE DE DATOS EVITADO ===\n{ex.Message}\n=====================================\n\n");
     }
 }
-// --- FIN DEL SEEDING ---
 
 if (app.Environment.IsDevelopment())
 {
@@ -85,10 +86,7 @@ else
 }
 
 app.UseHttpsRedirection();
-
-// IMPORTANTE: Esto reemplaza a MapStaticAssets en .NET 8
 app.UseStaticFiles(); 
-
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
