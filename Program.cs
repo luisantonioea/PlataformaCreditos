@@ -50,7 +50,12 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        db.Database.EnsureCreated(); 
+        
+        // 1. Limpieza total forzada a nivel de PostgreSQL (Bomba nuclear)
+        await db.Database.ExecuteSqlRawAsync("DROP SCHEMA public CASCADE; CREATE SCHEMA public;");
+        
+        // 2. Aplicar la estructura correcta y limpia
+        await db.Database.MigrateAsync(); 
 
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
