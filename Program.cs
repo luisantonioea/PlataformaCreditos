@@ -47,36 +47,29 @@ var app = builder.Build();
 // 3. BLINDAJE TRY-CATCH (Evita el Error 139 al arrancar)
 using (var scope = app.Services.CreateScope())
 {
-    try
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    
+    // 1. ELIMINA CUALQUIER RASTRO DE TABLAS ANTERIORES O CORRUPTAS
+    await db.Database.ExecuteSqlRawAsync("DROP SCHEMA public CASCADE; CREATE SCHEMA public;");
+    
+    // 2. CREA TODAS LAS TABLAS DESDE CERO AL INSTANTE (Ignora la carpeta Migrations)
+    await db.Database.EnsureCreatedAsync();
+
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
+
+    if (!await roleManager.RoleExistsAsync("Analista"))
     {
-        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        
-        // 1. Limpieza total forzada a nivel de PostgreSQL (Bomba nuclear)
-        await db.Database.ExecuteSqlRawAsync("DROP SCHEMA public CASCADE; CREATE SCHEMA public;");
-        
-        // 2. Aplicar la estructura correcta y limpia
-        await db.Database.MigrateAsync(); 
-
-        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
-
-        if (!await roleManager.RoleExistsAsync("Analista"))
-        {
-            await roleManager.CreateAsync(new IdentityRole("Analista"));
-        }
-
-        var analistaEmail = "analista@banco.com";
-        var user = await userManager.FindByEmailAsync(analistaEmail);
-        if (user == null)
-        {
-            user = new IdentityUser { UserName = analistaEmail, Email = analistaEmail, EmailConfirmed = true };
-            await userManager.CreateAsync(user, "Password123!");
-            await userManager.AddToRoleAsync(user, "Analista");
-        }
+        await roleManager.CreateAsync(new IdentityRole("Analista"));
     }
-    catch (Exception ex)
+
+    var analistaEmail = "analista@banco.com";
+    var user = await userManager.FindByEmailAsync(analistaEmail);
+    if (user == null)
     {
-        Console.WriteLine($"\n\n=== ERROR CRITICO DE BASE DE DATOS EVITADO ===\n{ex.Message}\n=====================================\n\n");
+        user = new IdentityUser { UserName = analistaEmail, Email = analistaEmail, EmailConfirmed = true };
+        await userManager.CreateAsync(user, "Password123!");
+        await userManager.AddToRoleAsync(user, "Analista");
     }
 }
 
